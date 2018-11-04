@@ -1,1 +1,3 @@
 chromedriver.exe
+/build
+/setup.py
