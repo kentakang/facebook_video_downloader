@@ -13,6 +13,8 @@ options.add_argument('log-level=3')
 
 driver = webdriver.Chrome('chromedriver.exe', chrome_options=options)
 
+need_loginpage = False
+
 # 영상 다운로드
 def download(video_url):
     driver.get(video_url)
@@ -25,7 +27,7 @@ def download(video_url):
         regex = "sd_src:\"[^\"\s()]+"
         video_source = re.findall(regex, page_source)[0].replace('&amp;', '&').replace('sd_src:"', '')
 
-    urlretrieve(video_source, "download.mp4")
+    urlretrieve(video_source, get_videoName(video_source))
     print("다운로드 완료")
 
 # 로그인이 필요한 영상 다운로드
@@ -48,7 +50,7 @@ def download_private(video_url):
         regex = "sd_src:\"[^\"\s()]+"
         video_source = re.findall(regex, page_source)[0].replace('&amp;', '&').replace('sd_src:"', '')
 
-    urlretrieve(video_source, "download.mp4")
+    urlretrieve(video_source, get_videoName(video_source))
     print("다운로드 완료")
     login_driver.quit()
     
@@ -65,6 +67,9 @@ def check_private(video_url):
     try:
         driver.find_element_by_class_name("login_page")
     except NoSuchElementException:
+        if check_privategroup(video_url):
+            need_loginpage = True
+            return True
         return False
     return True
 
@@ -75,6 +80,21 @@ def check_isHD(page_source):
         return False
     else:
         return True
+
+# URL에서 영상 파일 명 추출
+def get_videoName(video_source):
+    regex = r"(\w+\.\w+)(?=\?|$)"
+    return re.findall(regex, video_source)[0]
+
+# 비공개 그룹 여부 확인
+def check_privategroup(video_url):
+    try:
+        driver.find_element_by_tag_name("video")
+    except NoSuchElementException:
+        regex = "joinButton_[0-9]+"
+        if bool(re.search(regex, driver.page_source)):
+            return True
+    return False
     
 # 프로그램 메인 함수
 if __name__ == '__main__':
